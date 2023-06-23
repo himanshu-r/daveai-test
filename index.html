@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.0/dist/alpine.js"></script>
+  <!-- <script type="text/javascript" src="main.js"></script> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Person Management</title>
+  <style>
+    /* Your custom CSS styles here */
+  </style>
+</head>
+
+<body x-data="appData()">
+  <section>
+    <h2>Persons List</h2>
+    <input type="text" x-model="searchQuery" placeholder="Search">
+    <table>
+      <thead>
+        <tr>
+          <th @click="sort('firstName')">First Name</th>
+          <th @click="sort('lastName')">Last Name</th>
+          <th @click="sort('dob')">Date of Birth</th>
+          <th @click="sort('email')">Email</th>
+          <th @click="sort('mobile')">Mobile</th>
+          <th @click="sort('city')">City</th>
+          <th @click="sort('pincode')">Pincode</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="person in filteredPersons" :key="person.email">
+          <tr>
+            <td x-text="person.firstName"></td>
+            <td x-text="person.lastName"></td>
+            <td x-text="person.dob"></td>
+            <td x-text="person.email"></td>
+            <td x-text="person.mobile"></td>
+            <td x-text="person.city"></td>
+            <td x-text="person.pincode"></td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+    <div>
+      <button @click="previousPage" :disabled="currentPage === 1">Previous</button>
+      <button @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Add Person</h2>
+    <button @click="showForm = !showForm" x-text="showForm ? 'Hide Form' : 'Show Form'"></button>
+
+    <form @submit.prevent="addPerson" x-show="showForm">
+      <div>
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" x-model="firstName" @input="validate('firstName')">
+        <p x-show="validationErrors.firstName" class="error-message" x-text="validationErrors.firstName"></p>
+      </div>
+      <div>
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" x-model="lastName" @input="validate('lastName')">
+        <p x-show="validationErrors.lastName" class="error-message" x-text="validationErrors.lastName"></p>
+      </div>
+      <div>
+        <label for="dob">Date of Birth:</label>
+        <input type="date" id="dob" x-model="dob" @input="validate('dob')">
+        <p x-show="validationErrors.dob" class="error-message" x-text="validationErrors.dob"></p>
+      </div>
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" x-model="email" @input="validate('email')">
+        <p x-show="validationErrors.email" class="error-message" x-text="validationErrors.email"></p>
+      </div>
+      <div>
+        <label for="mobile">Mobile:</label>
+        <input type="text" id="mobile" x-model="mobile" @input="validate('mobile')">
+        <p x-show="validationErrors.mobile" class="error-message" x-text="validationErrors.mobile"></p>
+      </div>
+      <div>
+        <label for="city">City:</label>
+        <select id="city" x-model="city">
+          <option value="" disabled selected>Select City</option>
+          <option value="City 1">City 1</option>
+          <option value="City 2">City 2</option>
+          <option value="City 3">City 3</option>
+        </select>
+        <p x-show="validationErrors.city" class="error-message" x-text="validationErrors.city"></p>
+      </div>
+      <div>
+        <label for="pincode">Pincode:</label>
+        <input type="text" id="pincode" x-model="pincode" @input="validate('pincode')">
+        <p x-show="validationErrors.pincode" class="error-message" x-text="validationErrors.pincode"></p>
+      </div>
+      <button type="submit">Submit</button>
+    </form>
+  </section>
+
+  
+  <script>
+    function appData() {
+    return {
+      showForm: false,
+      firstName: '',
+      lastName: '',
+      dob: '',
+      email: '',
+      mobile: '',
+      city: '',
+      pincode: '',
+      validationErrors: {},
+      persons: [],
+      searchQuery: '',
+      currentPage: 1,
+      itemsPerPage: 5,
+      sortKey: '',
+      sortOrder: 'asc',
+      get totalPages() {
+        return Math.ceil(this.filteredPersons.length / this.itemsPerPage);
+      },
+      get filteredPersons() {
+        const query = this.searchQuery.toLowerCase().trim();
+        return this.persons.filter(person =>
+          person.firstName.toLowerCase().includes(query) ||
+          person.lastName.toLowerCase().includes(query) ||
+          person.email.toLowerCase().includes(query) ||
+          person.city.toLowerCase().includes(query)
+        );
+      },
+      addPerson() {
+        if (this.validateForm()) {
+          this.persons.push({
+            firstName: this.firstName,
+            lastName: this.lastName,
+            dob: this.dob,
+            email: this.email,
+            mobile: this.mobile,
+            city: this.city,
+            pincode: this.pincode
+          });
+          this.resetForm();
+        }
+      },
+      resetForm() {
+        this.firstName = '';
+        this.lastName = '';
+        this.dob = '';
+        this.email = '';
+        this.mobile = '';
+        this.city = '';
+        this.pincode = '';
+        this.validationErrors = {};
+      },
+      validateForm() {
+        this.validationErrors = {};
+
+        if (!this.firstName) {
+          this.validationErrors.firstName = 'First Name is required';
+        }
+
+        if (!this.lastName) {
+          this.validationErrors.lastName = 'Last Name is required';
+        }
+
+        if (!this.dob) {
+          this.validationErrors.dob = 'Date of Birth is required';
+        } else {
+          const today = new Date();
+          const birthDate = new Date(this.dob);
+          const age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          if (age < 18) {
+            this.validationErrors.dob = 'Age must be at least 18 years';
+          }
+        }
+
+        if (!this.email) {
+          this.validationErrors.email = 'Email is required';
+        } else if (!this.validateEmail(this.email)) {
+          this.validationErrors.email = 'Invalid email format';
+        }
+
+        if (!this.mobile) {
+          this.validationErrors.mobile = 'Mobile is required';
+        } else if (!this.validateMobile(this.mobile)) {
+          this.validationErrors.mobile = 'Invalid mobile number format';
+        }
+
+        if (!this.city) {
+          this.validationErrors.city = 'City is required';
+        }
+
+        if (!this.pincode) {
+          this.validationErrors.pincode = 'Pincode is required';
+        } else if (!this.validatePincode(this.pincode)) {
+          this.validationErrors.pincode = 'Invalid pincode format';
+        }
+
+        return Object.keys(this.validationErrors).length === 0;
+      },
+      validateEmail(email) {
+        // Custom email validation logic here
+        return /\S+@\S+\.\S+/.test(email);
+      },
+      validateMobile(mobile) {
+        // Custom mobile validation logic here
+        return /^\d{10}$/.test(mobile);
+      },
+      validatePincode(pincode) {
+        // Custom pincode validation logic here
+        return /^\d{6}$/.test(pincode);
+      },
+      sort(key) {
+        if (key === this.sortKey) {
+          this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+          this.sortKey = key;
+          this.sortOrder = 'asc';
+        }
+      },
+      previousPage() {
+        if (this.currentPage > 1) {
+          this.currentPage--;
+        }
+      },
+      nextPage() {
+        if (this.currentPage < this.totalPages) {
+          this.currentPage++;
+        }
+      }
+    };
+  }
+  </script>
+</body>
+
+</html>
